@@ -52,3 +52,7 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+*.sqlite3
+python_interpreter_defaults
+*.swp
+test.*
