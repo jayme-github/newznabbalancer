@@ -50,7 +50,7 @@ class AccountDB(object):
     def _fallback(self, atype):
         if not atype in ('grab', 'hit'):
             raise ValueError('atype must be "grab" or "hit"')
-        self.logging.warning('No accounts with open %s left!!!' % atype)
+        self.logger.warning('No accounts with open %s left!!!' % atype)
         self.cur.execute('INSERT INTO fallbacks(atype, datetime) VALUES (?,?)',
                         (atype, datetime.datetime.now()))
         self.db.commit()
@@ -58,7 +58,7 @@ class AccountDB(object):
         self.cur.execute('SELECT apikey, url FROM accounts WHERE isfallback = 1')
         account = self.cur.fetchone()
         if not account:
-            self.logging.warning('No fallback account defined, request will fail')
+            self.logger.warning('No fallback account defined, request will fail')
             return None
         return account
 
