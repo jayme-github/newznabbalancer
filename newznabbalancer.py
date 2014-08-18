@@ -196,15 +196,15 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 return
 
             # Reuse the clients user agent (sickbeard, couchpotato, ...)
-            addheaders = {}
+            clientUserAgent = {}
             if 'user-agent' in self.headers.dict:
-                addheaders['User-Agent'] = self.headers.dict.get('user-agent')
+                clientUserAgent['User-Agent'] = self.headers.dict.get('user-agent')
             
             # Replace fake API key
             url = baseUrl + self.path.replace(self.server.fakekey, apikey)
             self.log_message('Fetching: "%s"', url)
             try:
-                r = requests.get(url, headers=addheaders)
+                r = requests.get(url, headers=clientUserAgent)
             except requests.exceptions.RequestException as e:
                 self.send_error(503, str(e), datetime.datetime.now() + datetime.timedelta(minutes=5))
                 return
@@ -220,6 +220,9 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             
             self.send_response(r.status_code)
             self.send_header('Content-type', r.headers.get('content-type', 'text/html'))
+            # Forward possible x-dnzb headers to client
+            for header in filter(lambda h: h[0].lower().startswith('x-dnzb'), r.headers.iteritems()):
+                 self.send_header(*header)
             self.end_headers()
             data = r.text.encode('utf-8')
 
