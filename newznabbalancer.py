@@ -71,7 +71,7 @@ class AccountDB(object):
     def add_account(self, apikey, url, isFallback=False):
         url = url.strip().rstrip('/')
         apikey = apikey.strip()
-        if fallback:
+        if isFallback:
             self.cur.execute('INSERT INTO accounts(apikey, url, isfallback) VALUES (?, ?, 1)', (apikey, url))
         else:
             self.cur.execute('INSERT INTO accounts(apikey, url) VALUES (?, ?)', (apikey, url))
