@@ -19,6 +19,7 @@ PORT = 8000
 FAKEKEY = 'THISISAFAKEAPIKEYUSEDTOIDENTIFYMEATMYPROXY'
 DBNAME = 'newznabbalancer.sqlite3'
 LOGNAME = 'newznabbalancer.log'
+LOGFORMAT = '%(asctime)s - %(threadName)s - %(levelname)s - %(message)s'
 ACTION_TYPES = ('grab', 'hit') # possible API actions
 
 # Global regexp definitions
@@ -159,7 +160,11 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         Use own logger instead of stderr
         '''
-        self.logger.verbose('[%s] %s' % (self.address_string(), format%args))
+        from_string = self.address_string()
+        if self.headers.get('User-Agent'):
+            from_string = '%s@%s' % (self.headers.get('User-Agent'),
+                                    self.address_string())
+        self.logger.verbose('[%s] %s' % (from_string, format%args))
 
     def send_error(self, code, message=None, retryAfter=None):
         '''Send and log an error reply.
@@ -213,12 +218,12 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
             # Reuse the clients user agent (sickbeard, couchpotato, ...)
             clientUserAgent = {}
-            if 'user-agent' in self.headers.dict:
-                clientUserAgent['User-Agent'] = self.headers.dict.get('user-agent')
+            if self.headers.get('User-Agent'):
+                clientUserAgent['User-Agent'] = self.headers.get('User-Agent')
             
             # Replace fake API key
             url = baseUrl + self.path.replace(self.server.fakekey, apikey)
-            self.log_message('Fetching: "%s"', url)
+            self.log_message('GET %s', url)
             try:
                 r = requests.get(url, headers=clientUserAgent)
             except requests.exceptions.RequestException as e:
@@ -334,7 +339,7 @@ if __name__ == '__main__':
         logpath = os.path.join(options.datadir, LOGNAME)
     else:
         logpath = LOGNAME
-    logging.basicConfig(format='%(asctime)s - %(name)s.%(funcName)s - %(levelname)s - %(message)s',
+    logging.basicConfig(format=LOGFORMAT,
                         filename=LOGNAME, level=logging.WARNING)
     if options._debug:
         logging.getLogger('NNB').setLevel(logging.DEBUG)
