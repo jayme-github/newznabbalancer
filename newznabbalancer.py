@@ -19,6 +19,7 @@ PORT = 8000
 FAKEKEY = 'THISISAFAKEAPIKEYUSEDTOIDENTIFYMEATMYPROXY'
 DBNAME = 'newznabbalancer.sqlite3'
 LOGNAME = 'newznabbalancer.log'
+ACTION_TYPES = ('grab', 'hit') # possible API actions
 
 # Global regexp definitions
 re_WAIT = re.compile(ur'.*(?:Wait|in) (?P<minutes>\d+) minutes.*')
@@ -38,7 +39,15 @@ def verbose(self, message, *args, **kws):
 logging.Logger.verbose = verbose
 logger = logging.getLogger('NNB')
 
+
+class ActionTypeError(ValueError):
+    message = 'atype must be one of %s' % ', '.join(
+            '"%s"' % at for at in ACTION_TYPES)
+
 class AccountDB(object):
+
+    '''Handle account data. '''
+
     logger = logging.getLogger(logger.name + '.AccountDB')
 
     def __init__(self, dbpath):
@@ -49,7 +58,7 @@ class AccountDB(object):
 
     def _fallback(self, atype):
         if not atype in ('grab', 'hit'):
-            raise ValueError('atype must be "grab" or "hit"')
+            raise ActionTypeError
         self.logger.warning('No accounts with open %s left!!!' % atype)
         self.cur.execute('INSERT INTO fallbacks(atype, datetime) VALUES (?,?)',
                         (atype, datetime.datetime.now()))
@@ -79,21 +88,15 @@ class AccountDB(object):
 
     def set_next(self, atype, apikey, expiary):
         if not atype in ('grab', 'hit'):
-            raise ValueError('atype must be "grab" or "hit"')
+            raise ActionTypeError
         field = 'next'+atype
         self.cur.execute('UPDATE accounts SET %s = ? WHERE apikey = ?' % field,
                         (expiary, apikey))
         self.db.commit()
 
-    def set_nexthit(self, apikey, expiary):
-        return self.set_next('hit', apikey, expiary)
-    
-    def set_nextgrab(self, apikey, expiary):
-        return self.set_next('grab', apikey, expiary)
-
     def get_account(self, atype):
         if not atype in ('grab', 'hit'):
-            raise ValueError('atype must be "grab" or "hit"')
+            raise ActionTypeError
         field = 'next'+atype
         now = datetime.datetime.now()
         baseSQL = 'SELECT apikey, url FROM accounts WHERE isfallback = 0 AND '
@@ -107,15 +110,9 @@ class AccountDB(object):
             return self._fallback(atype)
         return account
     
-    def get_hit_account(self):
-        return self.get_account('hit')
-    
-    def get_grab_account(self):
-        return self.get_account('grab')
-
     def get_next(self, atype):
         if not atype in ('grab', 'hit'):
-            raise ValueError('atype must be "grab" or "hit"')
+            raise ActionTypeError
         field = 'next'+atype
         self.cur.execute('SELECT %s FROM accounts ORDER BY %s LIMIT 1' % (field, field))
         nexta = self.cur.fetchone()
@@ -145,12 +142,30 @@ class AccountDB(object):
 
 
 class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    '''Handle GET requests and balance them over accounts in AccountDB '''
+
+    server_version = "NewznabBalancer/" + __version__
     logger = logging.getLogger(logger.name + '.RequestHandler')
 
+    def log_request(self, code='-', size='-'):
+        '''Override BaseHTTPRequestHandler method
+
+        We don't want httpd standard logging here...
+        '''
+        pass
+
     def log_message(self, format, *args):
+        '''Log an arbitrary message.
+
+        Use own logger instead of stderr
+        '''
         self.logger.verbose('[%s] %s' % (self.address_string(), format%args))
 
     def send_error(self, code, message=None, retryAfter=None):
+        '''Send and log an error reply.
+
+        Allow to set a Retry-After header.
+        '''
         try:
             short, long = self.responses[code]
         except KeyError:
@@ -169,6 +184,7 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                           'explain': explain})
 
     def do_GET(self):
+        '''Serve a GET request.'''
         if self.server.fakekey in self.path:
             # Init database
             self.adb = AccountDB(self.server.dbpath)
@@ -257,12 +273,18 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.wfile.write('<p>Unhandeled request: "%s"</p>' % self.path)
 
 class NnbTCPServer(SocketServer.ThreadingTCPServer):
+
+    '''Inherit ThreadingTCPServer to allow additional parameters.'''
+
     def __init__(self, server_address, RequestHandlerClass, dbpath, fakekey, bind_and_activate=False):
         self.dbpath = dbpath
         self.fakekey = fakekey
         SocketServer.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
 
 class NewznabBalancer(object):
+
+    '''Simple controller for the NnbTCPServer instance'''
+
     def __init__(self, address, port, dbpath, fakekey):
         self.address = address
         self.port = port
