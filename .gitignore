@@ -56,3 +56,4 @@ docs/_build/
 python_interpreter_defaults
 *.swp
 test.*
+.venv
