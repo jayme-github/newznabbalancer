@@ -61,6 +61,16 @@ class AccountDB(object):
         self.cur.execute('UPDATE accounts SET %s = ? WHERE apikey = ?' % field,
                         (expiary, apikey))
         self.db.commit()
+    
+    def get_next(self, atype):
+        if not atype in ('grab', 'hit'):
+            raise ActionTypeError
+        field = 'next'+atype
+        self.cur.execute('SELECT %s FROM accounts ORDER BY %s LIMIT 1' % (field, field))
+        nexta = self.cur.fetchone()
+        if not nexta:
+            return 0
+        return nexta[0]
 
     def get_account(self, atype):
         if not atype in ('grab', 'hit'):
@@ -78,16 +88,6 @@ class AccountDB(object):
             return self._fallback(atype)
         return account
     
-    def get_next(self, atype):
-        if not atype in ('grab', 'hit'):
-            raise ActionTypeError
-        field = 'next'+atype
-        self.cur.execute('SELECT %s FROM accounts ORDER BY %s LIMIT 1' % (field, field))
-        nexta = self.cur.fetchone()
-        if not nexta:
-            return 0
-        return nexta[0]
-
     def list_accounts(self):
         self.cur.execute('SELECT * FROM accounts')
         accounts = self.cur.fetchall()
