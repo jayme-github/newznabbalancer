@@ -17,5 +17,6 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
-    scripts = ['nnb-server'],
+    test_suite='test',
+    scripts=['nnb-server'],
 )
