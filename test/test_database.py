@@ -50,7 +50,7 @@ class AccountDBTest(unittest.TestCase):
         self.db.cur.execute('SELECT name FROM sqlite_master WHERE type="table"')
         tables = [n[0] for n in self.db.cur.fetchall()]
         for name in ('accounts', 'fallbacks'):
-            self.assertTrue(name in tables, '{} not in {}'.format(name, tables))
+            self.assertTrue(name in tables, '%s not in %r' % (name, tables))
 
     def test_add_account(self):
         apikey, url = get_dummy_account()
