@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/jayme-github/newznabbalancer.svg?branch=master)](https://travis-ci.org/jayme-github/newznabbalancer)
+
+
 NewznabBalancer
 ===============
 
