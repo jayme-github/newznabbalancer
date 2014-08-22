@@ -14,16 +14,16 @@ except ImportError:
 from newznabbalancer.database import AccountDB, ActionTypeError, ACTION_TYPES
 
 def get_random_ascii_string(lengh=16):
-	'''Return a random string
+    '''Return a random string
 
-	May contain ASCII upper and lowercase as well as digits
-	'''
-	return ''.join(random.choice(
-		string.ascii_letters + string.digits
-		) for i in range(lengh))
+    May contain ASCII upper and lowercase as well as digits
+    '''
+    return ''.join(random.choice(
+        string.ascii_letters + string.digits
+        ) for i in range(lengh))
 
 def get_dummy_account():
-	return (get_random_ascii_string(), 'http://www.example.com')
+    return (get_random_ascii_string(), 'http://www.example.com')
 
 def get_future_dt():
     '''Datetime instance in the future'''
@@ -49,8 +49,8 @@ class AccountDBTest(unittest.TestCase):
     def test_db_create(self):
         self.db.cur.execute('SELECT name FROM sqlite_master WHERE type="table"')
         tables = [n[0] for n in self.db.cur.fetchall()]
-        self.assertIn('accounts', tables)
-        self.assertIn('fallbacks', tables)
+        for name in ('accounts', 'fallbacks'):
+            self.assertTrue(name in tables, '{} not in {}'.format(name, tables))
 
     def test_add_account(self):
         apikey, url = get_dummy_account()
