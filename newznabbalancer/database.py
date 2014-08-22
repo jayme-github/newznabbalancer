@@ -66,7 +66,7 @@ class AccountDB(object):
         if not atype in ('grab', 'hit'):
             raise ActionTypeError
         field = 'next'+atype
-        self.cur.execute('SELECT %s FROM accounts ORDER BY %s LIMIT 1' % (field, field))
+        self.cur.execute('SELECT %s FROM accounts WHERE %s IS NOT NULL ORDER BY %s LIMIT 1' % (field, field, field))
         nexta = self.cur.fetchone()
         if not nexta:
             return 0
@@ -88,20 +88,14 @@ class AccountDB(object):
             return self._fallback(atype)
         return account
     
-    def list_accounts(self):
+    def get_all_accounts(self):
         self.cur.execute('SELECT * FROM accounts')
-        accounts = self.cur.fetchall()
-        print '%d accounts:' % len(accounts)
-        for r in accounts:
-            print r
+        return self.cur.fetchall()
 
-    def list_fallbacks(self):
+    def get_last_fallbacks(self):
         self.cur.execute('SELECT * FROM fallbacks WHERE datetime >= ? ORDER BY datetime',
                 (datetime.datetime.now() - datetime.timedelta(hours=24), ))
-        fallbacks = self.cur.fetchall()
-        print '%d fallbacks:' % len(fallbacks)
-        for r in fallbacks:
-            print r
+        return self.cur.fetchall()
 
     def __del__(self):
         if self.db:

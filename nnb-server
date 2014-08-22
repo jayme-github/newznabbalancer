@@ -61,9 +61,15 @@ if __name__ == '__main__':
         # database stuff
         db = AccountDB(dbpath)
         if options.listaccounts:
-            db.list_accounts()
+            accounts = db.get_all_accounts()
+            print '%d accounts' % len(accounts)
+            for account in accounts:
+                print account
         if options.listfallbacks:
-            db.list_fallbacks()
+            fallbacks = db.get_last_fallbacks()
+            print '%d fallbacks' % len(fallbacks)
+            for fallback in fallbacks:
+                print fallback
         if options.addaccount:
             if len(args) == 3:
                 db.add_account(args[0], args[1], True)
