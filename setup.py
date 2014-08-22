@@ -17,5 +17,5 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
-    scripts = ['newznabbalancer.py'],
+    scripts = ['nnb-server'],
 )
