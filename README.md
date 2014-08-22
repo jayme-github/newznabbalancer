@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/jayme-github/newznabbalancer.svg?branch=master)](https://travis-ci.org/jayme-github/newznabbalancer)
-
+[![Coverage Status](https://img.shields.io/coveralls/jayme-github/newznabbalancer.svg)](https://coveralls.io/r/jayme-github/newznabbalancer)
 
 NewznabBalancer
 ===============
