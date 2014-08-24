@@ -1,5 +1,5 @@
-import SocketServer
-import SimpleHTTPServer
+import socketserver
+import http.server
 from threading import Thread
 import signal
 import re
@@ -9,22 +9,22 @@ import logging
 import newznabbalancer
 
 # Global regexp definitions
-re_WAIT = re.compile(ur'.*(?:Wait|in) (?P<minutes>\d+) minutes.*')
-re_GETNZB = re.compile(ur'/getnzb/(?P<nzbId>\w+)\.nzb')
-re_ERROR = re.compile(ur'\<error code=\"(?P<code>\d+)\" description=\"(?P<description>.*)\"\/\>')
+re_WAIT = re.compile(r'.*(?:Wait|in) (?P<minutes>\d+) minutes.*')
+re_GETNZB = re.compile(r'/getnzb/(?P<nzbId>\w+)\.nzb')
+re_ERROR = re.compile(r'\<error code=\"(?P<code>\d+)\" description=\"(?P<description>.*)\"\/\>')
 
 
-class NnbTCPServer(SocketServer.ThreadingTCPServer):
+class NnbTCPServer(socketserver.ThreadingTCPServer):
 
     '''Inherit ThreadingTCPServer to allow additional parameters.'''
 
     def __init__(self, server_address, RequestHandlerClass, dbpath, fakekey, bind_and_activate=False):
         self.dbpath = dbpath
         self.fakekey = fakekey
-        SocketServer.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
+        socketserver.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
 
 
-class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class RequestHandler(http.server.SimpleHTTPRequestHandler):
     '''Handle GET requests and balance them over accounts in AccountDB '''
 
     server_version = "NewznabBalancer/" + newznabbalancer.__version__
@@ -54,12 +54,12 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         Allow to set a Retry-After header.
         '''
         try:
-            short, long = self.responses[code]
+            shortmsg, longmsg = self.responses[code]
         except KeyError:
-            short, long = '???', '???'
+            shortmsg, longmsg = '???', '???'
         if not message:
-            message = short
-        explain = long
+            message = shortmsg
+        explain = longmsg
         self.log_error("code %d, message %s", code, message)
         self.send_response(code, message)
         if retryAfter:
@@ -124,7 +124,7 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_response(r.status_code)
             self.send_header('Content-type', r.headers.get('content-type', 'text/html'))
             # Forward possible x-dnzb headers to client
-            for header in filter(lambda h: h[0].lower().startswith('x-dnzb'), r.headers.iteritems()):
+            for header in filter(lambda h: h[0].lower().startswith('x-dnzb'), iter(r.headers.items())):
                  self.send_header(*header)
             self.end_headers()
             data = r.text.encode('utf-8')
@@ -178,12 +178,12 @@ class NewznabBalancer(object):
         self.httpd.server_bind()
         self.httpd.server_activate()
         
-        print 'Configure your clients with Newznab URL: "http://%s:%d"' % (self.address, self.port)
-        print 'And use the following API key: %s' % self.fakekey
+        print('Configure your clients with Newznab URL: "http://%s:%d"' % (self.address, self.port))
+        print('And use the following API key: %s' % self.fakekey)
         self.httpd.serve_forever()
 
     def stop(self):
-        print 'Shutting down active request threads, preparing to exit'
+        print('Shutting down active request threads, preparing to exit')
         self.httpd.shutdown()
         self.httpd.server_close()
 

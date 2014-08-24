@@ -111,7 +111,7 @@ class AccountDBTest(unittest.TestCase):
 
         for atype in ACTION_TYPES:
             self.assertEqual(count[atype],
-                    len(filter(lambda f: f[0] == atype, fallbacks)),
+                    len(list(filter(lambda f: f[0] == atype, fallbacks))),
                     '%s fallback count not correct' % atype)
 
 

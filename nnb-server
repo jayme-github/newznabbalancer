@@ -62,21 +62,21 @@ if __name__ == '__main__':
         db = AccountDB(dbpath)
         if options.listaccounts:
             accounts = db.get_all_accounts()
-            print '%d accounts' % len(accounts)
+            print('%d accounts' % len(accounts))
             for account in accounts:
-                print account
+                print(account)
         if options.listfallbacks:
             fallbacks = db.get_last_fallbacks()
-            print '%d fallbacks' % len(fallbacks)
+            print('%d fallbacks' % len(fallbacks))
             for fallback in fallbacks:
-                print fallback
+                print(fallback)
         if options.addaccount:
             if len(args) == 3:
                 db.add_account(args[0], args[1], True)
-                print 'Added apikey "%s" with URL "%s" as fallback' % (args[0], args[1])
+                print('Added apikey "%s" with URL "%s" as fallback' % (args[0], args[1]))
             elif len(args) == 2:
                 db.add_account(args[0], args[1])
-                print 'Added apikey "%s" with URL "%s"' % (args[0], args[1])
+                print('Added apikey "%s" with URL "%s"' % (args[0], args[1]))
             else:
                 parser.error('Need at least two arguments (API key and API URL!\nAdd a third parameter if you want to add the account as fallback.\n -a <apikey> <url> <shouldbefallbackyo>')
     else:
