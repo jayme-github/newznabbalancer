@@ -1,5 +1,11 @@
-import socketserver
-import http.server
+try:
+    import socketserver
+except ImportError:
+    import SocketServer as socketserver
+try:
+    from http.server import SimpleHTTPRequestHandler
+except ImportError:
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
 from threading import Thread
 import signal
 import re
@@ -24,7 +30,7 @@ class NnbTCPServer(socketserver.ThreadingTCPServer):
         socketserver.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
 
 
-class RequestHandler(http.server.SimpleHTTPRequestHandler):
+class RequestHandler(SimpleHTTPRequestHandler):
     '''Handle GET requests and balance them over accounts in AccountDB '''
 
     server_version = "NewznabBalancer/" + newznabbalancer.__version__
