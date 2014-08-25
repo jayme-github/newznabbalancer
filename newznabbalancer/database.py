@@ -1,7 +1,6 @@
 import sqlite3
 import os
 import datetime
-
 import logging
 
 
@@ -32,7 +31,7 @@ class AccountDB(object):
                         (atype, datetime.datetime.now()))
         self.db.commit()
         
-        self.cur.execute('SELECT apikey, url FROM accounts WHERE isfallback = 1')
+        self.cur.execute('SELECT apikey, url FROM accounts WHERE isfallback = 1 ORDER BY RANDOM() LIMIT 1')
         account = self.cur.fetchone()
         if not account:
             self.logger.warning('No fallback account defined, request will fail.')
@@ -78,11 +77,12 @@ class AccountDB(object):
         field = 'next'+atype
         now = datetime.datetime.now()
         baseSQL = 'SELECT apikey, url FROM accounts WHERE isfallback = 0 AND '
+        endSQL = ' ORDER BY RANDOM() LIMIT 1'
         if atype == 'grab':
             # A grab consumes a hit and a grab...
-            self.cur.execute(baseSQL + '(nextgrab IS NULL OR nextgrab < ?) AND (nexthit IS NULL OR nexthit < ?)', (now, now))
+            self.cur.execute(baseSQL + '(nextgrab IS NULL OR nextgrab < ?) AND (nexthit IS NULL OR nexthit < ?)' + endSQL, (now, now))
         else:
-            self.cur.execute(baseSQL + '%s IS NULL OR %s < ? LIMIT 1' % (field, field), (now, ))
+            self.cur.execute(baseSQL + '%s IS NULL OR %s < ?' % (field, field) + endSQL, (now, ))
         account = self.cur.fetchone()
         if not account:
             return self._fallback(atype)
